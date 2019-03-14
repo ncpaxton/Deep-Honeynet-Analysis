@@ -5,7 +5,7 @@ from sklearn import preprocessing
 import tensorflow as tf
 import ipaddress
 
-df = pd.read_csv('model_features.csv')
+df = pd.read_csv('all_traffic.csv')
 
 """
 Extract only the "hour" component from the timestamp in order to group incoming
