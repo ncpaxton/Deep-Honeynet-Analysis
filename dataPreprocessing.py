@@ -15,7 +15,7 @@ def drop_cols(df):
     return df
 
 #convert categorical features into one-hot vector
-def to_categorical(df):
+def to_onehot(df):
     feature_list = []
     for col in df.columns:
         print(col + ": " + str(len(df[col].unique())))
@@ -65,6 +65,15 @@ def convert_IPs(df, encoder):
     return df
 
 """
+Label Encoding
+"""
+def convert_label(df):
+    encoder = preprocessing.LabelEncoder()
+    encoder.fit(df['Category'])
+    df['Category'] = encoder.transform(df['Category'])
+    return df
+
+"""
 Normalize features
 """
 def normalize_features(df, use_keras_normalizer, maxMin_scaler):
@@ -97,9 +106,10 @@ df = pd.read_csv('all_traffic.csv')
 #sort by the current_time
 df = df.sort_values(by=['Current_Time'])
 df = drop_cols(df)
-df = to_categorical(df)
+df = to_onehot(df)
 df = convert_IPs(df, True)
 df = normalize_features(df, False,True)
+df = convert_label(df)
 
 #finally rearrange the columns
 idx = df.columns.get_loc('Category')
