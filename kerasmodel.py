@@ -97,7 +97,7 @@ def run_model(model,train_data,valid_data, train_data_generator, valid_data_gene
 """
 NOTE !!!
 Something with the current version of Keras in conda environment has been causing an error.
-Running this command should be able to make it work
+You should install the Keras version 2.1.2. Run the the following commands on your terminal
 pip uninstall keras
 conda install -c conda-forge keras==2.1.2
 """
