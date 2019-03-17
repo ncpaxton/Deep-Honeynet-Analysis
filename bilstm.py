@@ -12,7 +12,9 @@ from keras.layers import  LSTM, Dropout, Dense, Activation, TimeDistributed, Bid
 Building the Bidirectional LSTM architecture
 merge_mode can be one of the options: 'sum', 'mul', 'concat', 'ave'
 """
-def build_bilstm_model(use_dropout, LSTM_size, Dense_size, num_steps, num_features, num_classes, merge_mode):
+def build_bilstm_model(use_dropout, LSTM_size, Dense_size, num_features, hyperparameters, merge_mode):
+    num_steps = hyperparameters['num_steps']
+    num_classes = hyperparameters['num_classes']
     model = Sequential()
     model.add(Bidirectional(LSTM(LSTM_size, activation='relu', return_sequences=True, input_shape=(num_steps,num_features)), merge_mode=merge_mode))
     model.add(Bidirectional(LSTM(LSTM_size, activation='relu', return_sequences=True), merge_mode=merge_mode))
