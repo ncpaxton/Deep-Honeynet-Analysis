@@ -18,6 +18,7 @@ conda install -c conda-forge keras==2.1.2
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot
 from keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import  LSTM, Dropout, Dense, Activation, TimeDistributed
