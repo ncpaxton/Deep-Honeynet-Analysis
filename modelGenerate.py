@@ -93,12 +93,9 @@ def build_model(use_dropout, LSTM_size, Dense_size, num_steps, num_features, num
 Run and Compile the LSTM NN
 """
 def run_model(model_name, model, data_length, generators, hyperparameters):
-    train_len = data_length['train']
-    valid_len = data_length['validation']
-    train_gen = generators['train_data_generator']
-    valid_gen = generators['validation_data_generator']
-    batch_size = hyperparameters['batch_size']
-    num_epochs = hyperparameters['num_epochs']
+    train_len, valid_len = data_length['train'], data_length['validation']
+    train_gen, valid_gen = generators['train_data_generator'], generators['validation_data_generator']
+    batch_size, num_epochs = hyperparameters['batch_size'], hyperparameters['num_epochs']
     num_steps = hyperparameters['num_steps']
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categorical_accuracy'])
     if (model_name == 'GRU'):
@@ -107,14 +104,17 @@ def run_model(model_name, model, data_length, generators, hyperparameters):
         filepath = 'bilstm_model_history/model-{epoch:02d}.hdf5'
     #can be convert to True for saving best model
     checkpoints = ModelCheckpoint(filepath=filepath, save_best_only=False, verbose=1)
-    model.fit_generator(train_gen.generate(), train_len//(batch_size*num_steps), num_epochs,
+    model_history = model.fit_generator(train_gen.generate(), train_len//(batch_size*num_steps), num_epochs,
                         validation_data= valid_gen.generate(),
                         validation_steps= valid_len//(batch_size*num_steps), callbacks=[checkpoints])
+
+    return model_history
 
 """
 Generates and runs the models
 """
 def call_models(model_lst):
+    models_history = []
     hyperparameters = get_hyperparameters()
     train_data, num_features = load_train_data('all_train.csv')
     validation_data = load_validation_data('all_val.csv')
@@ -129,4 +129,7 @@ def call_models(model_lst):
 
         data_length = {'train':len(train_data), 'validation':len(validation_data)}
         generators = {'train_data_generator': train_data_generator, 'validation_data_generator':validation_data_generator}
-        run_model(model_name,model,data_length,generators, hyperparameters)
+        models_history.append(run_model(model_name,model,data_length,generators, hyperparameters))
+
+
+history_lst = call_models(['GRU', 'BILSTM'])
