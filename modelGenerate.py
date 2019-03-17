@@ -132,4 +132,27 @@ def call_models(model_lst):
         models_history.append(run_model(model_name,model,data_length,generators, hyperparameters))
 
 
-history_lst = call_models(['GRU', 'BILSTM'])
+"""
+Get train loss and validation loss values for each epoch
+"""
+def get_loss_tables(history_lst):
+    loss_table = pd.DataFrame()
+    val_loss_table = pd.DataFrame()
+    for i in range(len(model_lst)):
+        loss_table[model_lst[i]] = history_lst[i]['loss']
+        val_loss_table[model_lst[i]] = history_lst[i]['val_loss']
+    return loss_table, val_loss_table
+
+"""
+Predictions using test set
+"""
+def predict():
+
+
+model_lst = ['GRU', 'BILSTM']
+history_lst = call_models(model_lst)
+train_losses, val_losses = get_loss_tables(history_lst)
+train_losses.plot()
+pyplot.show()
+val_losses.plot()
+pyplot.show()
