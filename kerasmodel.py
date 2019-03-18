@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar 13 11:52:36 2019
-
+This is the older version of the model generation python script
 @author: berkaypolat
 """
 

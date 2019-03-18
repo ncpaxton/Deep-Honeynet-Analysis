@@ -20,11 +20,12 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot
 from keras.utils import to_categorical
-from keras.models import Sequential
+from keras.models import Sequential,load_model
 from keras.layers import  LSTM, Dropout, Dense, Activation, TimeDistributed
 from keras.callbacks import ModelCheckpoint
 from bilstm import build_bilstm_model
 from grumodel import build_gru_model
+from lstm import build_lstm_model
 
 """
 Loading the data and extracting useful information
@@ -36,6 +37,11 @@ def load_train_data(filename):
     return df.values, len(df.columns)-1
 
 def load_validation_data(filename):
+    df = pd.read_csv(filename)
+    df = df.drop('Unnamed: 0', axis=1)
+    return df.values
+
+def load_test_data(filename):
     df = pd.read_csv(filename)
     df = df.drop('Unnamed: 0', axis=1)
     return df.values
@@ -58,7 +64,10 @@ class KerasBatchGenerator(object):
         self.batch_size = hyperparameters['batch_size']
         self.num_classes = hyperparameters['num_classes']
         self.current_idx = 0
-        self.skip_step = hyperparameters['num_steps']
+        if(self.batch_size == 1):
+            self.skip_step = 1
+        else:
+            self.skip_step = hyperparameters['num_steps']
         self.num_features = num_features
 
     def generate(self):
@@ -77,20 +86,6 @@ class KerasBatchGenerator(object):
             yield x,y
 
 """
-Building the LSTM architecture
-"""
-def build_model(use_dropout, LSTM_size, Dense_size, num_steps, num_features, num_classes):
-    model = Sequential()
-    model.add(LSTM(LSTM_size, activation='relu', return_sequences=True, input_shape=(num_steps,num_features)))
-    model.add(LSTM(LSTM_size, activation='relu', return_sequences=True))
-    model.add(Dense(Dense_size, activation='relu'))
-    if (use_dropout):
-        model.add(Dropout(0.5))
-    model.add(TimeDistributed(Dense(num_classes)))
-    model.add(Activation('softmax'))
-    return model
-
-"""
 Run and Compile the LSTM NN
 """
 def run_model(model_name, model, data_length, generators, hyperparameters):
@@ -103,6 +98,8 @@ def run_model(model_name, model, data_length, generators, hyperparameters):
         filepath = 'gru_model_history/model-{epoch:02d}.hdf5'
     elif(model_name == 'BILSTM'):
         filepath = 'bilstm_model_history/model-{epoch:02d}.hdf5'
+    else:
+        filepath = 'lstm_model_history/model-{epoch:02d}.hdf5'
     #can be convert to True for saving best model
     checkpoints = ModelCheckpoint(filepath=filepath, save_best_only=False, verbose=1)
     model_history = model.fit_generator(train_gen.generate(), train_len//(batch_size*num_steps), num_epochs,
@@ -127,33 +124,60 @@ def call_models(model_lst):
             model = build_gru_model(True, 200, 100, num_features, hyperparameters)
         elif(model_name == 'BILSTM'):
             model = build_bilstm_model(True, 200, 100, num_features, hyperparameters, merge_mode='concat')
+        else:
+            model = build_lstm_model(True,200,100,num_features, hyperparameters)
 
         data_length = {'train':len(train_data), 'validation':len(validation_data)}
         generators = {'train_data_generator': train_data_generator, 'validation_data_generator':validation_data_generator}
         models_history.append(run_model(model_name,model,data_length,generators, hyperparameters))
 
+    return models_history
 
 """
 Get train loss and validation loss values for each epoch
+The History Object keys are:
+['val_loss', 'val_categorical_accuracy', 'loss', 'categorical_accuracy']
 """
-def get_loss_tables(history_lst):
+def get_loss_tables(history_lst, model_lst):
     loss_table = pd.DataFrame()
     val_loss_table = pd.DataFrame()
     for i in range(len(model_lst)):
-        loss_table[model_lst[i]] = history_lst[i]['loss']
-        val_loss_table[model_lst[i]] = history_lst[i]['val_loss']
+        loss_table[model_lst[i]] = history_lst[i].history['loss']
+        val_loss_table[model_lst[i]] = history_lst[i].history['val_loss']
     return loss_table, val_loss_table
 
 """
 Predictions using test set
 """
-def predict():
+def predict(data_path, hyperparameters):
+    train_data, num_features = load_train_data('all_train.csv')
+    test_data = load_test_data('all_test.csv')
+    full_path = data_path + "/model-" + str(hyperparameters['num_epochs']) + ".hdf5"
+    model = load_model(full_path)
+    generator_parameters = {'batch_size': 1, 'num_classes':3, 'num_steps':25}
+    test_data_generator = KerasBatchGenerator(test_data, generator_parameters, num_features)
+    idx_to_label = {0: "Normal", 1: "Web", 2: "IoT"}
+    num_steps = hyperparameters['num_steps']
+    for i in range(0,test_data.shape[0], num_steps):
+        true_label = "True Label: "
+        predict_label = "Predicted: "
+        data = next(test_data_generator.generate())
+        predictions = model.predict(data[0])
+        predict_traffics = np.argmax(predictions, axis=-1)
+        for j in range(num_steps):
+            true_label += test_data[i+j,-1]
+            predict_label += idx_to_label[predict_traffics[j]]
+            print(true_label)
+            print(predict_label)
 
 
-model_lst = ['GRU', 'BILSTM']
+model_lst = ['LSTM', 'GRU', 'BILSTM']
 history_lst = call_models(model_lst)
-train_losses, val_losses = get_loss_tables(history_lst)
-train_losses.plot()
-pyplot.show()
-val_losses.plot()
-pyplot.show()
+train_losses, val_losses = get_loss_tables(history_lst, model_lst)
+train_losses.to_csv("train_losses.csv")
+val_losses.to_csv("validation_losses.csv")
+
+# train_losses.plot()
+# pyplot.show()
+# val_losses.plot()
+# pyplot.show()
