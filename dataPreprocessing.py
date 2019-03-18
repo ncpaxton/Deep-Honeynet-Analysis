@@ -9,7 +9,7 @@ from keras.utils import normalize
 
 #drop columns we dont need or have 1 unique value
 def drop_cols(df):
-    drop_list = ['Packet_Number','IP_Address_Norm','DF','MF','Day','Month','Hour','Day_of_Year', 'Current_Time']
+    drop_list = ['Packet_Number','IP_Address_Norm','DF','MF','Day','Month','Hour','Day_of_Year']
     for col in drop_list:
         df = df.drop(col, axis=1)
     return df
@@ -101,38 +101,65 @@ def normalize_features(df, use_keras_normalizer, maxMin_scaler):
     return df
 
 
-df = pd.read_csv('all_traffic.csv')
+#load data
+training = pd.read_csv('all_training.csv')
+training = training.drop('Unnamed: 0', axis=1)
+dev = pd.read_csv('all_dev.csv')
+dev = dev.drop('Unnamed: 0', axis=1)
+test = pd.read_csv('all_test.csv')
+test = test.drop('Unnamed: 0', axis=1)
 
-#sort by the current_time
-df = df.sort_values(by=['Current_Time'])
-df = drop_cols(df)
-df = to_onehot(df)
-df = convert_IPs(df, True)
-df = normalize_features(df, False,True)
-df = convert_label(df)
+#combine all in one table
+frames = [training, dev, test]
+combined = pd.concat(frames)
 
-#finally rearrange the columns
-idx = df.columns.get_loc('Category')
-cols = df.columns.tolist()
-cols = cols[:idx] + cols[idx+1:] + cols[idx:idx+1]
-df = df[cols]
-df.to_csv('all_traffic_processed.csv')
+#drop few columns, convert to one-hot and convert IPs
+combined = drop_cols(combined)
+combined = to_onehot(combined)
+combined = convert_IPs(combined, True)  
 
-#create train,validation,test sets
-row_num = len(df.index)
-train_size = round(row_num * 0.8)
-validation_size = (row_num - train_size) // 2
-df_train = df[:train_size]
-df_val = df[train_size: train_size + validation_size]
-df_test = df[train_size + validation_size : ]
-df_train.to_csv('all_train.csv')
-df_val.to_csv('all_val.csv')
-df_train.to_csv('all_test.csv')
+#retrieve train/dev/test sets back
+new_training = combined[0:training.shape[0]]
+new_dev = combined[training.shape[0]:training.shape[0] + dev.shape[0]]
+new_test = combined[training.shape[0] + dev.shape[0]: ]
+
+#finish rest of the preprocessing and save the final versions
+frames = [new_training, new_dev, new_test]
+data_lst = ['training','dev','test']
+
+for df,title in zip(frames,data_lst):
+    #sort by the current_time
+    df = df.sort_values(by=['Current_Time'])
+    df = df.drop('Current_Time', axis=1)
+    df = normalize_features(df, False,True)
+    df = convert_label(df)
+    
+    #finally rearrange the columns
+    idx = df.columns.get_loc('Category')
+    cols = df.columns.tolist()
+    cols = cols[:idx] + cols[idx+1:] + cols[idx:idx+1]
+    df = df[cols]
+    df.to_csv('all_' + title + '_processed.csv')
+    
+    
 
 
 ####################################
 #####      PREVIOUS WORK      ######
 ####################################
+"""    
+#create train,validation,test sets
+    row_num = len(df.index)
+    train_size = round(row_num * 0.8)
+    validation_size = (row_num - train_size) // 2
+    df_train = df[:train_size]
+    df_val = df[train_size: train_size + validation_size]
+    df_test = df[train_size + validation_size : ]
+    df_train.to_csv('all_train.csv')
+    df_val.to_csv('all_val.csv')
+    df_train.to_csv('all_test.csv')    
+    
+"""    
 
 """
 ##if we want to convert to a Tensor
