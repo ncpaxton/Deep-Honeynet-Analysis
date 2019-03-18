@@ -146,12 +146,12 @@ def get_loss_tables(history_lst, model_lst):
         val_loss_table[model_lst[i]] = history_lst[i].history['val_loss']
     return loss_table, val_loss_table
 
-
-model_lst = ['LSTM', 'GRU', 'BILSTM']
-history_lst = call_models(model_lst)
-train_losses, val_losses = get_loss_tables(history_lst, model_lst)
-train_losses.to_csv("train_losses.csv")
-val_losses.to_csv("validation_losses.csv")
+if __name__ == '__main__':
+    model_lst = ['LSTM', 'GRU', 'BILSTM']
+    history_lst = call_models(model_lst)
+    train_losses, val_losses = get_loss_tables(history_lst, model_lst)
+    train_losses.to_csv("train_losses.csv")
+    val_losses.to_csv("validation_losses.csv")
 
 # train_losses.plot()
 # pyplot.show()
