@@ -17,7 +17,7 @@ def build_bilstm_model(use_dropout, LSTM_size, Dense_size, num_features, hyperpa
     num_classes = hyperparameters['num_classes']
     model = Sequential()
     model.add(Bidirectional(LSTM(LSTM_size, activation='relu', return_sequences=True),input_shape=(num_steps,num_features), merge_mode=merge_mode))
-    model.add(Bidirectional(LSTM(LSTM_size, activation='relu', return_sequences=True), merge_mode=merge_mode))
+    model.add(Bidirectional(LSTM(LSTM_size, activation='relu', return_sequences=True),merge_mode=merge_mode))
     model.add(Dense(Dense_size, activation='relu'))
     if (use_dropout):
         model.add(Dropout(0.5))
