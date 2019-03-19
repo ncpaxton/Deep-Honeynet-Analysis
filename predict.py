@@ -15,21 +15,17 @@ def predict(data_path, hyperparameters):
     #idx_to_label = {1: "Normal", 2: "Web", 0: "IoT"}
     num_steps = hyperparameters['num_steps']
     correct_predictions = 0
-    
+
     for i in range(0,test_data.shape[0], num_steps):
         data = next(test_data_generator.generate())
         predictions = model.predict(data[0])
         predict_traffics = np.argmax(predictions, axis=-1)
         for j in range(num_steps):
-            if(i+j == test_data.shape[0]):
-                break
-            elif(test_data[i+j,-1] == predict_traffics[0][j]):
-                correct_predictions += 1
-            #true_label += idx_to_label[test_data[i+j,-1]]
-            #predict_label += idx_to_label[predict_traffics[0][j]]
-            #print(true_label)
-            #print(predict_label)
-            
+             if(i+j == test_data.shape[0]):
+                 break
+             elif(test_data[i+j,-1] == predict_traffics[0][j]):
+                 correct_predictions += 1
+                 
     return correct_predictions / test_data.shape[0]
 
 hyperparameters = get_hyperparameters()

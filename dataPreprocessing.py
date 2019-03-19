@@ -21,7 +21,7 @@ def to_onehot(df):
         print(col + ": " + str(len(df[col].unique())))
         if(len(df[col].unique()) < 20 and col != 'Category'):
             feature_list.append(col)
-    
+
     for col in feature_list:
         df = pd.concat([df,pd.get_dummies(df[col], prefix=col)], axis=1)
         df = df.drop(col, axis=1)
@@ -42,7 +42,7 @@ def convert_IPs(df, encoder):
         df[columns] = pd.DataFrame(df['IP_Address'].values.tolist())
         for col in columns:
             df[col] = pd.to_numeric(df[col])
-       
+
     else:
         """
         Our second approach will be to convert them to one-hot vectors. Previously we
@@ -77,11 +77,9 @@ def convert_label(df):
 Normalize features
 """
 def normalize_features(df, use_keras_normalizer, maxMin_scaler):
-    norm_columns = []
-    #exclude_lst = ['Category','IP_Address','TTL']
-    for col in df.columns:
-        if (col != 'Category' and df[col].max() > 60):
-            norm_columns.append(col)
+    idx = df.columns.get_loc('Category')
+    norm_columns = df.columns.tolist()
+    norm_columns = norm_columns[:idx]
 
     if(use_keras_normalizer):
       None                                                              #ignoring it for now
@@ -116,7 +114,7 @@ combined = pd.concat(frames)
 #drop few columns, convert to one-hot and convert IPs
 combined = drop_cols(combined)
 combined = to_onehot(combined)
-combined = convert_IPs(combined, True)  
+combined = convert_IPs(combined, True)
 
 #retrieve train/dev/test sets back
 new_training = combined[0:training.shape[0]]
@@ -129,25 +127,26 @@ data_lst = ['training','dev','test']
 
 for df,title in zip(frames,data_lst):
     #sort by the current_time
-    df = df.sort_values(by=['Current_Time'])
+    #df = df.sort_values(by=['Current_Time'])
+    df = df.sample(frac=1).reset_index(drop=True)
     df = df.drop('Current_Time', axis=1)
-    df = normalize_features(df, False,True)
+    df = normalize_features(df, False,False)
     df = convert_label(df)
-    
+
     #finally rearrange the columns
     idx = df.columns.get_loc('Category')
     cols = df.columns.tolist()
     cols = cols[:idx] + cols[idx+1:] + cols[idx:idx+1]
     df = df[cols]
     df.to_csv('all_' + title + '_processed.csv')
-    
-    
+
+
 
 
 ####################################
 #####      PREVIOUS WORK      ######
 ####################################
-"""    
+"""
 #create train,validation,test sets
     row_num = len(df.index)
     train_size = round(row_num * 0.8)
@@ -157,9 +156,9 @@ for df,title in zip(frames,data_lst):
     df_test = df[train_size + validation_size : ]
     df_train.to_csv('all_train.csv')
     df_val.to_csv('all_val.csv')
-    df_train.to_csv('all_test.csv')    
-    
-"""    
+    df_train.to_csv('all_test.csv')
+
+"""
 
 """
 ##if we want to convert to a Tensor

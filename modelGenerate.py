@@ -50,7 +50,7 @@ def load_test_data(filename):
 Retrieve hyperparameters
 """
 def get_hyperparameters():
-    return {'batch_size': 16, 'num_classes':3, 'num_steps':25, 'num_epochs': 100}
+    return {'batch_size': 16, 'num_classes':3, 'num_steps':10, 'num_epochs': 200}
 
 """
 Creating a data generator class in order to feed in an
@@ -101,7 +101,7 @@ def run_model(model_name, model, data_length, generators, hyperparameters):
     else:
         filepath = 'lstm_model_history/model-{epoch:02d}.hdf5'
     #can be convert to True for saving best model
-    checkpoints = ModelCheckpoint(filepath=filepath, save_best_only=False, verbose=1)
+    checkpoints = ModelCheckpoint(filepath=filepath, save_best_only=True, verbose=1)
     model_history = model.fit_generator(train_gen.generate(), train_len//(batch_size*num_steps), num_epochs,
                         validation_data= valid_gen.generate(),
                         validation_steps= valid_len//(batch_size*num_steps), callbacks=[checkpoints])
@@ -152,8 +152,3 @@ if __name__ == '__main__':
     train_losses, val_losses = get_loss_tables(history_lst, model_lst)
     train_losses.to_csv("train_losses.csv")
     val_losses.to_csv("validation_losses.csv")
-
-# train_losses.plot()
-# pyplot.show()
-# val_losses.plot()
-# pyplot.show()
